@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -9,12 +10,15 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.ItemRepository;
+import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
@@ -23,50 +27,36 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto create(Long userId, ItemDto itemDto) throws NotFoundException, ValidationException {
-        if (!userService.userExists(userId)) {
-            throw new NotFoundException("Пользователь с ID " + userId + " не найден");
-        }
+        validateItem(itemDto);
+        User owner = getUserOrThrow(userId);
 
-        validateItemDto(itemDto);
-
-        User owner = new User(userId, null, null);
         Item item = ItemMapper.toItem(itemDto, owner);
         Item savedItem = itemRepository.save(item);
         return ItemMapper.toItemDto(savedItem);
     }
 
     @Override
-    public ItemDto update(Long userId, Long itemId, ItemDto itemDto) throws NotFoundException, ForbiddenException {
-        if (!userService.userExists(userId)) {
-            throw new NotFoundException("Пользователь с ID " + userId + " не найден");
-        }
-
-        Item existingItem = itemRepository.findById(itemId)
-                .orElseThrow(() -> new NotFoundException("Вещь с ID " + itemId + " не найдена"));
+    public ItemDto update(Long userId, Long itemId, ItemDto itemDto)
+            throws NotFoundException, ForbiddenException, ValidationException {
+        getUserOrThrow(userId);
+        Item existingItem = getItemOrThrow(itemId);
 
         if (!existingItem.getOwner().getId().equals(userId)) {
             throw new ForbiddenException("Редактирование чужой вещи запрещено");
         }
 
         updateItemFields(existingItem, itemDto);
-        Item updatedItem = itemRepository.save(existingItem);
-        return ItemMapper.toItemDto(updatedItem);
+        return ItemMapper.toItemDto(itemRepository.save(existingItem));
     }
 
     @Override
     public ItemDto getById(Long itemId) throws NotFoundException {
-        return ItemMapper.toItemDto(
-                itemRepository.findById(itemId)
-                        .orElseThrow(() -> new NotFoundException("Вещь с ID " + itemId + " не найдена"))
-        );
+        return ItemMapper.toItemDto(getItemOrThrow(itemId));
     }
 
     @Override
     public List<ItemDto> getAllByOwner(Long userId) throws NotFoundException {
-        if (!userService.userExists(userId)) {
-            throw new NotFoundException("Пользователь с ID " + userId + " не найден");
-        }
-
+        getUserOrThrow(userId);
         return itemRepository.findAllByOwnerId(userId).stream()
                 .map(ItemMapper::toItemDto)
                 .collect(Collectors.toList());
@@ -82,7 +72,21 @@ public class ItemServiceImpl implements ItemService {
                 .collect(Collectors.toList());
     }
 
-    private void validateItemDto(ItemDto itemDto) throws ValidationException {
+    private User getUserOrThrow(Long userId) throws NotFoundException {
+        UserDto userDto = userService.getById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
+        return UserMapper.toUser(userDto);
+    }
+
+    private Item getItemOrThrow(Long itemId) throws NotFoundException {
+        return itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Вещь с ID " + itemId + " не найдена"));
+    }
+
+    private void validateItem(ItemDto itemDto) throws ValidationException {
+        if (itemDto == null) {
+            throw new ValidationException("Данные вещи не могут быть null");
+        }
         if (itemDto.getName() == null || itemDto.getName().isBlank()) {
             throw new ValidationException("Название вещи не может быть пустым");
         }
@@ -94,11 +98,17 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
-    private void updateItemFields(Item item, ItemDto itemDto) {
+    private void updateItemFields(Item item, ItemDto itemDto) throws ValidationException {
         if (itemDto.getName() != null) {
+            if (itemDto.getName().isBlank()) {
+                throw new ValidationException("Название вещи не может быть пустым");
+            }
             item.setName(itemDto.getName());
         }
         if (itemDto.getDescription() != null) {
+            if (itemDto.getDescription().isBlank()) {
+                throw new ValidationException("Описание вещи не может быть пустым");
+            }
             item.setDescription(itemDto.getDescription());
         }
         if (itemDto.getAvailable() != null) {

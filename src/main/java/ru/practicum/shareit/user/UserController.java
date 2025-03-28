@@ -15,6 +15,7 @@ import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/users")
@@ -33,7 +34,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    public UserDto getById(@PathVariable Long userId) throws NotFoundException {
+    public Optional<UserDto> getById(@PathVariable Long userId) throws NotFoundException {
         return userService.getById(userId);
     }
 

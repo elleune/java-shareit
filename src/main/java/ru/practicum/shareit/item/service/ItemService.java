@@ -10,7 +10,7 @@ import java.util.List;
 public interface ItemService {
     ItemDto create(Long userId, ItemDto itemDto) throws NotFoundException, ValidationException;
 
-    ItemDto update(Long userId, Long itemId, ItemDto itemDto) throws NotFoundException, ForbiddenException;
+    ItemDto update(Long userId, Long itemId, ItemDto itemDto) throws NotFoundException, ForbiddenException, ValidationException;
 
     ItemDto getById(Long itemId) throws NotFoundException;
 

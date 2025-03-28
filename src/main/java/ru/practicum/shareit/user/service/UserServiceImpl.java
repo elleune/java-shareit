@@ -12,6 +12,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -44,9 +45,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto getById(Long userId) throws NotFoundException {
-        User user = getUserOrThrow(userId);
-        return UserMapper.toUserDto(user);
+    public Optional<UserDto> getById(Long userId) throws NotFoundException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с ID " + userId + " не найден"));
+        return Optional.of(UserMapper.toUserDto(user));
     }
 
     @Override
@@ -63,7 +65,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean userExists(Long userId) {
+    public boolean existsById(Long userId) {
         return userRepository.findById(userId).isPresent();
     }
 
