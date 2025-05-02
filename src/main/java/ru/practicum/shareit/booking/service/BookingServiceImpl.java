@@ -42,7 +42,7 @@ public class BookingServiceImpl implements BookingService {
         validateBookingDates(bookingInDto);
 
         User booker = getUserOrThrow(userId);
-        ItemDto itemDto = itemService.getById(bookingInDto.getItemId());
+        ItemDto itemDto = itemService.getById(bookingInDto.getItemId(), userId);
         Item item = itemRepository.findById(bookingInDto.getItemId())
                 .orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
