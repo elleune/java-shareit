@@ -1,3 +1,5 @@
+package ru.practicum.shareit.item.service;
+
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
