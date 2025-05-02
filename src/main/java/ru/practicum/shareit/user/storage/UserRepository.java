@@ -1,19 +1,19 @@
 package ru.practicum.shareit.user.storage;
 
-
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.user.model.User;
 
-import java.util.List;
 import java.util.Optional;
 
-public interface UserRepository {
-    User save(User user);
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
 
-    Optional<User> findById(Long userId);
+    @Query("SELECT u FROM User u WHERE lower(u.email) = lower(:email)")
+    Optional<User> findByEmail(@Param("email") String email);
 
-    Optional<User> findByEmail(String email);
-
-    List<User> findAll();
-
-    void delete(Long userId);
+    // Методы save(), findById(), findAll(), deleteById() уже предоставляются JpaRepository
+    // existsById() также есть в JpaRepository
 }

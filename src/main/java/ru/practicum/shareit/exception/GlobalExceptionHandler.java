@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -45,6 +46,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 new ErrorResponse("Internal Server Error", e.getMessage()),
                 HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    @ExceptionHandler(NotOwnerException.class)
+    public ResponseEntity<ErrorResponse> handleNotOwnerException(NotOwnerException e) {
+        return new ResponseEntity<>(
+                new ErrorResponse("Validation Error", e.getMessage()),
+                HttpStatus.BAD_REQUEST
         );
     }
 }

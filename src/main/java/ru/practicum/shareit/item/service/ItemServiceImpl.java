@@ -1,22 +1,33 @@
 package ru.practicum.shareit.item.service;
 
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.dto.BookingOutDto;
+import ru.practicum.shareit.booking.mapper.BookingMapper;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.booking.storage.BookingRepository;
 import ru.practicum.shareit.exception.ForbiddenException;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.mapper.CommentMapper;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.storage.CommentRepository;
 import ru.practicum.shareit.item.storage.ItemRepository;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
 
 @Slf4j
 @Service
@@ -24,6 +35,9 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final UserService userService;
+    private final BookingRepository bookingRepository;
+    private final CommentRepository commentRepository;
+
 
     @Override
     public ItemDto create(Long userId, ItemDto itemDto) throws NotFoundException, ValidationException {
@@ -51,15 +65,88 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto getById(Long itemId) throws NotFoundException {
-        return ItemMapper.toItemDto(getItemOrThrow(itemId));
+        Item item = getItemOrThrow(itemId);
+
+        BookingOutDto lastBooking = bookingRepository
+                .findFirstByItemIdAndStartBeforeAndStatusOrderByStartDesc(
+                        itemId,
+                        LocalDateTime.now(),
+                        BookingStatus.APPROVED)
+                .map(BookingMapper::toBookingOutDto)
+                .orElse(null);
+
+        BookingOutDto nextBooking = bookingRepository
+                .findFirstByItemIdAndStartAfterAndStatusOrderByStartAsc(
+                        itemId,
+                        LocalDateTime.now(),
+                        BookingStatus.APPROVED)
+                .map(BookingMapper::toBookingOutDto)
+                .orElse(null);
+
+        List<CommentDto> comments = commentRepository.findByItemId(itemId).stream()
+                .map(comment -> {
+                    CommentDto dto = CommentMapper.toCommentDto(comment);
+                    dto.setAuthorName(comment.getAuthor().getName());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        return ItemMapper.toItemDto(item, comments, lastBooking, nextBooking);
     }
 
     @Override
     public List<ItemDto> getAllByOwner(Long userId) throws NotFoundException {
         getUserOrThrow(userId);
-        return itemRepository.findAllByOwnerId(userId).stream()
-                .map(ItemMapper::toItemDto)
+        List<Item> items = itemRepository.findAllByOwnerId(userId);
+        return items.stream()
+                .map(item -> {
+                    ItemDto itemDto = ItemMapper.toItemDto(item);
+                    addBookingInfo(itemDto, item.getId());
+                    itemDto.setComments(commentRepository.findByItemIdWithAuthor(item.getId()).stream()
+                            .map(CommentMapper::toCommentDto)
+                            .collect(Collectors.toList()));
+                    return itemDto;
+                })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public CommentDto addComment(Long userId, Long itemId, CommentDto commentDto) {
+        CommentService commentService = new CommentServiceImpl(
+                commentRepository,
+                userService,
+                this,
+                bookingRepository
+        );
+        return commentService.create(userId, itemId, commentDto);
+    }
+
+    private void addBookingInfo(ItemDto itemDto, Long itemId) {
+        LocalDateTime now = LocalDateTime.now();
+        Optional<Booking> lastBookingOpt = bookingRepository
+                .findFirstByItemIdAndEndBeforeAndStatusOrderByStartDesc(
+                        itemId,
+                        now,
+                        BookingStatus.APPROVED
+                );
+
+        Optional<Booking> nextBookingOpt = bookingRepository
+                .findFirstByItemIdAndStartAfterAndStatusOrderByStartAsc(
+                        itemId,
+                        now,
+                        BookingStatus.APPROVED
+                );
+
+        lastBookingOpt.ifPresent(booking ->
+                itemDto.setLastBooking(BookingMapper.toBookingOutDto(booking)));
+        nextBookingOpt.ifPresent(booking ->
+                itemDto.setNextBooking(BookingMapper.toBookingOutDto(booking)));
+    }
+
+    @Override
+    public Item getItemById(Long itemId) {
+        return itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Вещь с ID " + itemId + " не найдена"));
     }
 
     @Override
@@ -116,3 +203,4 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 }
+

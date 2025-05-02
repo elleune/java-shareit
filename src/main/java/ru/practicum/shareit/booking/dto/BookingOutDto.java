@@ -10,15 +10,16 @@ import ru.practicum.shareit.user.dto.UserDto;
 
 import java.time.LocalDateTime;
 
+
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BookingDto {
+@Builder
+public class BookingOutDto {
     private Long id;
     private LocalDateTime start;
     private LocalDateTime end;
-    private ItemDto item;
-    private UserDto booker;
     private BookingStatus status;
+    private UserDto booker;
+    private ItemDto item;
 }
