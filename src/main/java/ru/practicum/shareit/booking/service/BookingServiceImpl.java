@@ -209,7 +209,7 @@ public class BookingServiceImpl implements BookingService {
             throw new ValidationException("Даты начала и окончания бронирования не могут совпадать");
         }
 
-        if (bookingInDto.getStart().isBefore(LocalDateTime.now().plusHours(3))) {
+        if (bookingInDto.getStart().isBefore(LocalDateTime.now().plusHours(1))) {
             throw new ValidationException("Бронирование должно быть создано минимум за 1 час до начала");
         }
     }
