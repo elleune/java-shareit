@@ -1,5 +1,3 @@
-package ru.practicum.shareit.item.service;
-
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,35 +61,32 @@ public class ItemServiceImpl implements ItemService {
         return ItemMapper.toItemDto(itemRepository.save(existingItem));
     }
 
-@Override
-    public ItemDto getById(Long itemId, Long userId) throws NotFoundException {
+    @Override
+    public ItemDto getById(Long itemId) throws NotFoundException {
         Item item = getItemOrThrow(itemId);
 
-        boolean isOwner = item.getOwner() != null && item.getOwner().getId().equals(userId);
+        BookingOutDto lastBooking = bookingRepository
+                .findFirstByItemIdAndStartBeforeAndStatusOrderByStartDesc(
+                        itemId,
+                        LocalDateTime.now(),
+                        BookingStatus.APPROVED)
+                .map(BookingMapper::toBookingOutDto)
+                .orElse(null);
 
-        BookingOutDto lastBooking = null;
-        BookingOutDto nextBooking = null;
-
-        if (isOwner) {
-            lastBooking = bookingRepository
-                    .findFirstByItemIdAndStartBeforeAndStatusOrderByStartDesc(
-                            itemId,
-                            LocalDateTime.now(),
-                            BookingStatus.APPROVED)
-                    .map(BookingMapper::toBookingOutDto)
-                    .orElse(null);
-
-            nextBooking = bookingRepository
-                    .findFirstByItemIdAndStartAfterAndStatusOrderByStartAsc(
-                            itemId,
-                            LocalDateTime.now(),
-                            BookingStatus.APPROVED)
-                    .map(BookingMapper::toBookingOutDto)
-                    .orElse(null);
-        }
+        BookingOutDto nextBooking = bookingRepository
+                .findFirstByItemIdAndStartAfterAndStatusOrderByStartAsc(
+                        itemId,
+                        LocalDateTime.now(),
+                        BookingStatus.APPROVED)
+                .map(BookingMapper::toBookingOutDto)
+                .orElse(null);
 
         List<CommentDto> comments = commentRepository.findByItemId(itemId).stream()
-                .map(CommentMapper::toCommentDto)
+                .map(comment -> {
+                    CommentDto dto = CommentMapper.toCommentDto(comment);
+                    dto.setAuthorName(comment.getAuthor().getName());
+                    return dto;
+                })
                 .collect(Collectors.toList());
 
         return ItemMapper.toItemDto(item, comments, lastBooking, nextBooking);
@@ -206,4 +201,3 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 }
-
