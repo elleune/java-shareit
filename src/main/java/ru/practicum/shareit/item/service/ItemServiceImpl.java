@@ -66,10 +66,8 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemDto getById(Long itemId, Long userId) throws NotFoundException {
         Item item = getItemOrThrow(itemId);
-        
         BookingOutDto lastBooking = null;
         BookingOutDto nextBooking = null;
-        
         if (item.getOwner().getId().equals(userId)) {
             lastBooking = bookingRepository
                     .findFirstByItemIdAndStartBeforeAndStatusOrderByStartDesc(
