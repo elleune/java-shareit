@@ -1,6 +1,7 @@
 package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.dto.BookingInDto;
@@ -21,13 +22,13 @@ import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
+import ru.practicum.shareit.user.storage.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -36,6 +37,7 @@ public class BookingServiceImpl implements BookingService {
     private final UserService userService;
     private final ItemService itemService;
     private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -43,7 +45,7 @@ public class BookingServiceImpl implements BookingService {
         validateBookingDates(bookingInDto);
 
         User booker = getUserOrThrow(userId);
-        ItemDto itemDto = itemService.getById(bookingInDto.getItemId());
+        ItemDto itemDto = itemService.getById(bookingInDto.getItemId(), userId);
         Item item = itemRepository.findById(bookingInDto.getItemId()).orElseThrow(() -> new NotFoundException("Вещь не найдена"));
 
         if (item.getOwner().getId().equals(userId)) {
@@ -86,47 +88,13 @@ public class BookingServiceImpl implements BookingService {
     public BookingOutDto getById(Long userId, Long bookingId) {
         Booking booking = getBookingOrThrow(bookingId);
 
-        if (!isBookingParticipant(userId, booking)) {
+        // Проверка, что пользователь является либо автором бронирования, либо владельцем вещи
+        if (!booking.getBooker().getId().equals(userId) &&
+                !booking.getItem().getOwner().getId().equals(userId)) {
             throw new ForbiddenException("Просматривать бронирование могут только автор или владелец");
         }
 
-        if (!isValidStatus(booking.getStatus())) {
-            throw new ValidationException("Бронирование не подтверждено");
-        }
-
-        BookingOutDto bookingOutDto = BookingMapper.toBookingOutDto(booking);
-
-        bookingOutDto.setLastBooking(null);
-
-        if (isItemOwner(userId, booking.getItem())) {
-            Optional<Booking> lastBooking = findLastApprovedBooking(
-                    booking.getItem().getId(),
-                    booking.getStart()
-            );
-
-            lastBooking.ifPresent(value -> bookingOutDto.setLastBooking(BookingMapper.toBookingOutDto(value)));
-        }
-
-        return bookingOutDto;
-    }
-
-    private Optional<Booking> findLastApprovedBooking(Long itemId, LocalDateTime beforeDate) {
-        return bookingRepository.findFirstByItemIdAndStartBeforeAndStatusOrderByStartDesc(itemId, beforeDate, BookingStatus.APPROVED);
-    }
-
-    private boolean isBookingParticipant(Long userId, Booking booking) {
-        Long bookerId = booking.getBooker() != null ? booking.getBooker().getId() : null;
-        Long ownerId = booking.getItem() != null && booking.getItem().getOwner() != null ? booking.getItem().getOwner().getId() : null;
-
-        return userId.equals(bookerId) || userId.equals(ownerId);
-    }
-
-    private boolean isValidStatus(BookingStatus status) {
-        return status == BookingStatus.APPROVED || status == BookingStatus.WAITING;
-    }
-
-    private boolean isItemOwner(Long userId, Item item) {
-        return item.getOwner() != null && userId.equals(item.getOwner().getId());
+        return BookingMapper.toBookingOutDto(booking);
     }
 
     @Override
