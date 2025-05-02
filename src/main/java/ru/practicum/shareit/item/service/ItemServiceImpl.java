@@ -63,32 +63,35 @@ public class ItemServiceImpl implements ItemService {
         return ItemMapper.toItemDto(itemRepository.save(existingItem));
     }
 
-    @Override
-    public ItemDto getById(Long itemId) throws NotFoundException {
+@Override
+    public ItemDto getById(Long itemId, Long userId) throws NotFoundException {
         Item item = getItemOrThrow(itemId);
 
-        BookingOutDto lastBooking = bookingRepository
-                .findFirstByItemIdAndStartBeforeAndStatusOrderByStartDesc(
-                        itemId,
-                        LocalDateTime.now(),
-                        BookingStatus.APPROVED)
-                .map(BookingMapper::toBookingOutDto)
-                .orElse(null);
+        boolean isOwner = item.getOwner() != null && item.getOwner().getId().equals(userId);
 
-        BookingOutDto nextBooking = bookingRepository
-                .findFirstByItemIdAndStartAfterAndStatusOrderByStartAsc(
-                        itemId,
-                        LocalDateTime.now(),
-                        BookingStatus.APPROVED)
-                .map(BookingMapper::toBookingOutDto)
-                .orElse(null);
+        BookingOutDto lastBooking = null;
+        BookingOutDto nextBooking = null;
+
+        if (isOwner) {
+            lastBooking = bookingRepository
+                    .findFirstByItemIdAndStartBeforeAndStatusOrderByStartDesc(
+                            itemId,
+                            LocalDateTime.now(),
+                            BookingStatus.APPROVED)
+                    .map(BookingMapper::toBookingOutDto)
+                    .orElse(null);
+
+            nextBooking = bookingRepository
+                    .findFirstByItemIdAndStartAfterAndStatusOrderByStartAsc(
+                            itemId,
+                            LocalDateTime.now(),
+                            BookingStatus.APPROVED)
+                    .map(BookingMapper::toBookingOutDto)
+                    .orElse(null);
+        }
 
         List<CommentDto> comments = commentRepository.findByItemId(itemId).stream()
-                .map(comment -> {
-                    CommentDto dto = CommentMapper.toCommentDto(comment);
-                    dto.setAuthorName(comment.getAuthor().getName());
-                    return dto;
-                })
+                .map(CommentMapper::toCommentDto)
                 .collect(Collectors.toList());
 
         return ItemMapper.toItemDto(item, comments, lastBooking, nextBooking);
