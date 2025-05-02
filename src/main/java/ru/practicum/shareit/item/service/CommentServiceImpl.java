@@ -44,7 +44,7 @@ public class CommentServiceImpl implements CommentService {
             throw new ValidationException("Вы не можете оставить отзыв на эту вещь");
         }
         
-        if (bookigRepository.existsByItemIdAndEndAfterAndStatus(        itemId, 
+        if (!bookingRepository.existsByBookerIdAndItemIdAndEndBeforeAndStatus(        itemId, 
         LocalDateTime.now(), 
         BookingStatus.APPROVED)) {
     throw new ValidationException("Нельзя оставить отзыв: у вещи есть активное бронирование");
