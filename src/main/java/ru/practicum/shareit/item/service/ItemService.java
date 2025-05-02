@@ -14,7 +14,7 @@ public interface ItemService {
 
     ItemDto update(Long userId, Long itemId, ItemDto itemDto) throws NotFoundException, ForbiddenException, ValidationException;
 
-    ItemDto getById(Long itemId) throws NotFoundException;
+     ItemDto getById(Long itemId, Long userId) throws NotFoundException;
 
     List<ItemDto> getAllByOwner(Long userId) throws NotFoundException;
 
