@@ -55,6 +55,10 @@ public class CommentServiceImpl implements CommentService {
         return CommentMapper.toCommentDto(savedComment);
     }
 
+        if (item.getLastBooking() != null) {
+        throw new ValidationException("Нельзя оставить отзыв: у вещи есть активное бронирование");
+    }
+
     @Override
     public List<CommentDto> getCommentsByItemId(Long itemId) {
         List<Comment> comments = commentRepository.findByItemIdWithAuthor(itemId);
