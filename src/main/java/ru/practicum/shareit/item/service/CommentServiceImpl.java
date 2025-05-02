@@ -33,22 +33,25 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public CommentDto create(Long userId, Long itemId, CommentDto commentDto) {
         User author = UserMapper.toUser(userService.getById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"))
-        );
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
         Item item = itemService.getItemById(itemId);
 
-        // Проверка, что пользователь брал вещь в аренду и срок аренды уже закончился
-        if (!bookingRepository.existsByBookerIdAndItemIdAndEndBeforeAndStatus(
-                userId, itemId, LocalDateTime.now(), BookingStatus.APPROVED)) {
+        // Проверка 1: Пользователь должен был арендовать вещь в прошлом
+        boolean hasPastBooking = bookingRepository.existsByBookerIdAndItemIdAndEndBeforeAndStatus(
+                userId, itemId, LocalDateTime.now(), BookingStatus.APPROVED);
+        
+        // Проверка 2: У вещи не должно быть активных бронирований
+        boolean hasActiveBooking = bookingRepository.existsByItemIdAndEndAfterAndStatus(
+                itemId, LocalDateTime.now(), BookingStatus.APPROVED);
+
+        if (!hasPastBooking) {
             throw new ValidationException("Вы не можете оставить отзыв на эту вещь");
         }
         
-        if (!bookingRepository.existsByBookerIdAndItemIdAndEndBeforeAndStatus(        itemId, 
-        LocalDateTime.now(), 
-        BookingStatus.APPROVED)) {
-    throw new ValidationException("Нельзя оставить отзыв: у вещи есть активное бронирование");
-}
+        if (hasActiveBooking) {
+            throw new ValidationException("Нельзя оставить отзыв: у вещи есть активное бронирование");
+        }
 
         Comment comment = Comment.builder()
                 .text(commentDto.getText())
@@ -57,16 +60,13 @@ public class CommentServiceImpl implements CommentService {
                 .created(LocalDateTime.now())
                 .build();
 
-        Comment savedComment = commentRepository.save(comment);
-        return CommentMapper.toCommentDto(savedComment);
+        return CommentMapper.toCommentDto(commentRepository.save(comment));
     }
 
     @Override
     public List<CommentDto> getCommentsByItemId(Long itemId) {
-        List<Comment> comments = commentRepository.findByItemIdWithAuthor(itemId);
-        return comments.stream()
+        return commentRepository.findByItemIdWithAuthor(itemId).stream()
                 .map(CommentMapper::toCommentDto)
                 .collect(Collectors.toList());
     }
 }
-
