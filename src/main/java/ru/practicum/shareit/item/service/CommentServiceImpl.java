@@ -44,6 +44,11 @@ public class CommentServiceImpl implements CommentService {
             throw new ValidationException("Вы не можете оставить отзыв на эту вещь");
         }
 
+        
+        if (item.getLastBooking() != null) {
+        throw new ValidationException("Нельзя оставить отзыв: у вещи есть активное бронирование");
+    }
+
         Comment comment = Comment.builder()
                 .text(commentDto.getText())
                 .item(item)
@@ -53,10 +58,6 @@ public class CommentServiceImpl implements CommentService {
 
         Comment savedComment = commentRepository.save(comment);
         return CommentMapper.toCommentDto(savedComment);
-    }
-
-        if (item.getLastBooking() != null) {
-        throw new ValidationException("Нельзя оставить отзыв: у вещи есть активное бронирование");
     }
 
     @Override
