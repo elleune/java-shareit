@@ -67,6 +67,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             Long itemId,
             LocalDateTime start,
             BookingStatus status);
-}
 
+    @Query("SELECT b FROM Booking b WHERE b.item.id = :itemId AND b.start < :now AND b.status = 'APPROVED' ORDER BY b.start DESC LIMIT 1")
+    Optional<Booking> findLastBooking(@Param("itemId") Long itemId, @Param("now") LocalDateTime now);
+
+}
 
