@@ -96,9 +96,15 @@ public class BookingServiceImpl implements BookingService {
 
         BookingOutDto bookingOutDto = BookingMapper.toBookingOutDto(booking);
 
+        bookingOutDto.setLastBooking(null);
+
         if (isItemOwner(userId, booking.getItem())) {
-            Optional<Booking> lastBooking = findLastApprovedBooking(booking.getItem().getId(), booking.getStart());
-            lastBooking.ifPresent(b -> bookingOutDto.setLastBooking(BookingMapper.toBookingOutDto(b)));
+            Optional<Booking> lastBooking = findLastApprovedBooking(
+                    booking.getItem().getId(),
+                    booking.getStart()
+            );
+
+            lastBooking.ifPresent(value -> bookingOutDto.setLastBooking(BookingMapper.toBookingOutDto(value)));
         }
 
         return bookingOutDto;
