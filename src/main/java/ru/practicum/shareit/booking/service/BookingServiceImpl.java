@@ -208,9 +208,5 @@ public class BookingServiceImpl implements BookingService {
         if (bookingInDto.getStart().equals(bookingInDto.getEnd())) {
             throw new ValidationException("Даты начала и окончания бронирования не могут совпадать");
         }
-
-        if (bookingInDto.getStart().isBefore(LocalDateTime.now().plusHours(1))) {
-            throw new ValidationException("Бронирование должно быть создано минимум за 1 час до начала");
-        }
     }
 }
