@@ -64,24 +64,29 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDto getById(Long itemId) throws NotFoundException {
+    public ItemDto getById(Long itemId, Long userId) throws NotFoundException {
         Item item = getItemOrThrow(itemId);
+        
+        BookingOutDto lastBooking = null;
+        BookingOutDto nextBooking = null;
+        
+        if (item.getOwner().getId().equals(userId)) {
+            lastBooking = bookingRepository
+                    .findFirstByItemIdAndStartBeforeAndStatusOrderByStartDesc(
+                            itemId,
+                            LocalDateTime.now(),
+                            BookingStatus.APPROVED)
+                    .map(BookingMapper::toBookingOutDto)
+                    .orElse(null);
 
-        BookingOutDto lastBooking = bookingRepository
-                .findFirstByItemIdAndStartBeforeAndStatusOrderByStartDesc(
-                        itemId,
-                        LocalDateTime.now(),
-                        BookingStatus.APPROVED)
-                .map(BookingMapper::toBookingOutDto)
-                .orElse(null);
-
-        BookingOutDto nextBooking = bookingRepository
-                .findFirstByItemIdAndStartAfterAndStatusOrderByStartAsc(
-                        itemId,
-                        LocalDateTime.now(),
-                        BookingStatus.APPROVED)
-                .map(BookingMapper::toBookingOutDto)
-                .orElse(null);
+            nextBooking = bookingRepository
+                    .findFirstByItemIdAndStartAfterAndStatusOrderByStartAsc(
+                            itemId,
+                            LocalDateTime.now(),
+                            BookingStatus.APPROVED)
+                    .map(BookingMapper::toBookingOutDto)
+                    .orElse(null);
+        }
 
         List<CommentDto> comments = commentRepository.findByItemId(itemId).stream()
                 .map(comment -> {
