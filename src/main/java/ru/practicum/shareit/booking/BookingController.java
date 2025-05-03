@@ -1,9 +1,5 @@
 package ru.practicum.shareit.booking;
 
-/**
- * TODO Sprint add-bookings.
- */
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,19 +24,20 @@ import java.util.List;
 @RequestMapping("/bookings")
 @RequiredArgsConstructor
 public class BookingController {
+    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
     private final BookingService bookingService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public BookingOutDto create(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID_HEADER) Long userId,
             @Valid @RequestBody BookingInDto bookingInDto) {
         return bookingService.create(bookingInDto, userId);
     }
 
     @PatchMapping("/{bookingId}")
     public BookingOutDto update(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID_HEADER) Long userId,
             @PathVariable Long bookingId,
             @RequestParam boolean approved) {
         return bookingService.update(userId, bookingId, approved);
@@ -48,21 +45,21 @@ public class BookingController {
 
     @GetMapping("/{bookingId}")
     public BookingOutDto getById(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID_HEADER) Long userId,
             @PathVariable Long bookingId) {
         return bookingService.getById(userId, bookingId);
     }
 
     @GetMapping
     public List<BookingOutDto> getAllByUser(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID_HEADER) Long userId,
             @RequestParam(defaultValue = "ALL") BookingState state) {
         return bookingService.getAllOfUserByState(userId, state);
     }
 
     @GetMapping("/owner")
     public List<BookingOutDto> getAllByOwner(
-            @RequestHeader("X-Sharer-User-Id") Long userId,
+            @RequestHeader(USER_ID_HEADER) Long userId,
             @RequestParam(defaultValue = "ALL") BookingState state) {
         return bookingService.getAllOfOwnerByState(userId, state);
     }

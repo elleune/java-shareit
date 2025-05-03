@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(ValidationException e) {
+    @ExceptionHandler({NotOwnerException.class, ValidationException.class})
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(RuntimeException e) {
         return new ResponseEntity<>(
                 new ErrorResponse("Validation Error", e.getMessage()),
                 HttpStatus.BAD_REQUEST
@@ -46,14 +46,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 new ErrorResponse("Internal Server Error", e.getMessage()),
                 HttpStatus.INTERNAL_SERVER_ERROR
-        );
-    }
-
-    @ExceptionHandler(NotOwnerException.class)
-    public ResponseEntity<ErrorResponse> handleNotOwnerException(NotOwnerException e) {
-        return new ResponseEntity<>(
-                new ErrorResponse("Validation Error", e.getMessage()),
-                HttpStatus.BAD_REQUEST
         );
     }
 }

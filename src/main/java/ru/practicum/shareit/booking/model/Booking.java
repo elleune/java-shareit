@@ -13,20 +13,15 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 
-
 @Entity
 @Table(name = "bookings")
 @Builder(toBuilder = true)
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Booking {
@@ -42,17 +37,61 @@ public class Booking {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id", nullable = false)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Item item;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booker_id", nullable = false)
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private User booker;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BookingStatus status;
+
+    public Long getId() {
+        return id;
+    }
+
+    public LocalDateTime getStart() {
+        return start;
+    }
+
+    public LocalDateTime getEnd() {
+        return end;
+    }
+
+    public Item getItem() {
+        return item;
+    }
+
+    public User getBooker() {
+        return booker;
+    }
+
+    public BookingStatus getStatus() {
+        return status;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setStart(LocalDateTime start) {
+        this.start = start;
+    }
+
+    public void setEnd(LocalDateTime end) {
+        this.end = end;
+    }
+
+    public void setItem(Item item) {
+        this.item = item;
+    }
+
+    public void setBooker(User booker) {
+        this.booker = booker;
+    }
+
+    public void setStatus(BookingStatus status) {
+        this.status = status;
+    }
 }

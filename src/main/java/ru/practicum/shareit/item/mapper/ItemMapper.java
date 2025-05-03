@@ -1,7 +1,6 @@
 package ru.practicum.shareit.item.mapper;
 
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 import ru.practicum.shareit.booking.dto.BookingOutDto;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -11,7 +10,6 @@ import ru.practicum.shareit.user.model.User;
 import java.util.List;
 
 
-@Slf4j
 @UtilityClass
 public class ItemMapper {
 
