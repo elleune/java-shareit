@@ -17,6 +17,7 @@ import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.service.CommentService;
 import ru.practicum.shareit.item.service.ItemService;
 
 import java.util.List;
@@ -25,34 +26,32 @@ import java.util.List;
 @RequestMapping("/items")
 @RequiredArgsConstructor
 public class ItemController {
-    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
     private final ItemService itemService;
+    private final CommentService commentService;
 
     @PostMapping
     public ItemDto create(
-            @RequestHeader(USER_ID_HEADER) Long userId,
+            @RequestHeader("X-Sharer-User-Id") Long userId,
             @RequestBody ItemDto itemDto) throws NotFoundException, ValidationException {
         return itemService.create(userId, itemDto);
     }
 
     @PatchMapping("/{itemId}")
     public ItemDto update(
-            @RequestHeader(USER_ID_HEADER) Long userId,
+            @RequestHeader("X-Sharer-User-Id") Long userId,
             @PathVariable Long itemId,
             @RequestBody ItemDto itemDto) throws NotFoundException {
         return itemService.update(userId, itemId, itemDto);
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto getById(
-            @PathVariable Long itemId,
-            @RequestHeader(USER_ID_HEADER) Long userId) throws NotFoundException {
-        return itemService.getById(itemId, userId);
+    public ItemDto getById(@PathVariable Long itemId) throws NotFoundException {
+        return itemService.getById(itemId);
     }
 
     @GetMapping
     public List<ItemDto> getAllByOwner(
-            @RequestHeader(USER_ID_HEADER) Long userId) throws NotFoundException {
+            @RequestHeader("X-Sharer-User-Id") Long userId) throws NotFoundException {
         return itemService.getAllByOwner(userId);
     }
 
@@ -64,7 +63,7 @@ public class ItemController {
     @PostMapping("/{itemId}/comment")
     @ResponseStatus(HttpStatus.CREATED)
     public CommentDto addComment(
-            @RequestHeader(USER_ID_HEADER) Long userId,
+            @RequestHeader("X-Sharer-User-Id") Long userId,
             @PathVariable Long itemId,
             @Valid @RequestBody CommentDto commentDto) {
         return itemService.addComment(userId, itemId, commentDto);
