@@ -22,5 +22,4 @@ public class BookingOutDto {
     private BookingStatus status;
     private UserDto booker;
     private ItemDto item;
-    private BookingOutDto lastBooking;
 }

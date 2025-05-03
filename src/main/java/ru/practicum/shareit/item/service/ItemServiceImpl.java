@@ -138,7 +138,7 @@ public class ItemServiceImpl implements ItemService {
 
                     List<Booking> itemBookings = bookingsByItemId.getOrDefault(item.getId(), Collections.emptyList());
                     if (!itemBookings.isEmpty()) {
-                        // Находим последнее завершенное бронирование
+
                         Optional<Booking> lastBooking = itemBookings.stream()
                                 .filter(b -> b.getStatus() == BookingStatus.APPROVED)
                                 .filter(b -> b.getEnd().isBefore(now))
