@@ -6,6 +6,8 @@
 		<groupId>ru.practicum</groupId>
 		<artifactId>shareit</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
+	        <packaging>pom</packaging>
+                <name>ShareIt Parent</name>
 	</parent>
 
 	<artifactId>shareit-server</artifactId>
